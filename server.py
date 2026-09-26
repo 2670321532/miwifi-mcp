@@ -23,7 +23,6 @@ from typing import Any
 
 import aiohttp
 from mcp.server.fastmcp import FastMCP
-
 from xiaomi_miwifi import ClientDevice, MiWiFiClient
 
 logging.basicConfig(level=logging.INFO)
@@ -73,7 +72,7 @@ class RP02Client(MiWiFiClient):
             inner = hashlib.sha1((self._password + key).encode()).hexdigest()
             pwd = hashlib.sha1((nonce + inner).encode()).hexdigest()
 
-        body = "username=%s&password=%s&logtype=2&nonce=%s" % (self._username, pwd, nonce)
+        body = f"username={self._username}&password={pwd}&logtype=2&nonce={nonce}"
         headers = {
             "Content-Type": "application/x-www-form-urlencoded",
             "User-Agent": "Mozilla/5.0",
@@ -85,11 +84,11 @@ class RP02Client(MiWiFiClient):
 
         try:
             j = json.loads(text)
-        except json.JSONDecodeError:
-            raise RuntimeError("login: bad JSON response: %s" % text[:200])
+        except json.JSONDecodeError as err:
+            raise RuntimeError(f"login: bad JSON response: {text[:200]}") from err
 
         if j.get("code") != 0 or not j.get("token"):
-            raise RuntimeError("login failed: %s" % j)
+            raise RuntimeError(f"login failed: {j}")
         self._token = j["token"]
         return self._token
 
@@ -114,7 +113,7 @@ def _summarize(obj: Any, limit: int = 30) -> str:
         items = []
         for x in obj[:limit]:
             if isinstance(x, dict):
-                items.append({k: v for k, v in list(x.items())[:8]})
+                items.append(dict(list(x.items())[:8]))
             else:
                 items.append(x)
         return json.dumps(items, ensure_ascii=False, indent=1, default=str)
@@ -164,7 +163,7 @@ async def miwifi_system_info() -> str:
         try:
             r[name] = await fn()
         except Exception as e:
-            r[name] = "ERR: %s" % str(e)[:100]
+            r[name] = f"ERR: {str(e)[:100]}"
     return _summarize(r)
 
 
@@ -197,7 +196,7 @@ async def miwifi_bandwidth() -> str:
         try:
             r[name] = await fn()
         except Exception as e:
-            r[name] = "ERR: %s" % str(e)[:100]
+            r[name] = f"ERR: {str(e)[:100]}"
     return _summarize(r)
 
 
@@ -219,7 +218,7 @@ async def miwifi_wifi_detail() -> str:
         try:
             r[name] = await fn()
         except Exception as e:
-            r[name] = "ERR: %s" % str(e)[:100]
+            r[name] = f"ERR: {str(e)[:100]}"
     return _summarize(r)
 
 
@@ -237,11 +236,11 @@ async def miwifi_port_forward_list() -> str:
             if isinstance(r, dict) and r.get("code") == 0:
                 lst = r.get("list") or []
                 if not lst:
-                    return "当前没有端口转发规则（端点 %s 返回空列表）" % ep
+                    return f"当前没有端口转发规则（端点 {ep} 返回空列表）"
                 return "%d 条端口转发规则（端点 %s）：\n%s" % (
                     len(lst), ep, _summarize(lst))
         except Exception as e:
-            last = str(e)[:120]
+            str(e)[:120]
             continue
     return "❌ 未能读取端口转发列表（试过的端点都失败）"
 
@@ -272,7 +271,7 @@ async def miwifi_blocked_devices() -> str:
         try:
             r[name] = await fn()
         except Exception as e:
-            r[name] = "ERR: %s" % str(e)[:100]
+            r[name] = f"ERR: {str(e)[:100]}"
     return _summarize(r)
 
 
@@ -310,7 +309,7 @@ async def miwifi_add_dhcp_reservation(mac: str, ip: str, name: str) -> str:
     """添加 DHCP 静态地址绑定（固定设备 IP）"""
     c = get_client()
     ok = await c.async_add_dhcp_reservation(mac=mac, ip=ip, name=name)
-    return "✅ 已绑定 %s → %s (%s)" % (mac, ip, name) if ok else "❌ 绑定失败"
+    return f"✅ 已绑定 {mac} → {ip} ({name})" if ok else "❌ 绑定失败"
 
 
 @mcp.tool()
@@ -318,7 +317,7 @@ async def miwifi_remove_dhcp_reservation(mac: str) -> str:
     """删除 DHCP 静态绑定"""
     c = get_client()
     ok = await c.async_remove_dhcp_reservation(mac=mac)
-    return "✅ 已解除 %s 的静态绑定" % mac if ok else "❌ 解除失败"
+    return f"✅ 已解除 {mac} 的静态绑定" if ok else "❌ 解除失败"
 
 
 @mcp.tool()
@@ -326,7 +325,7 @@ async def miwifi_block_device(mac: str) -> str:
     """拉黑设备（禁止上网）。⚠️ 传设备 MAC"""
     c = get_client()
     ok = await c.async_block_device(mac=mac)
-    return "✅ 已拉黑 %s" % mac if ok else "❌ 拉黑失败"
+    return f"✅ 已拉黑 {mac}" if ok else "❌ 拉黑失败"
 
 
 @mcp.tool()
@@ -347,7 +346,7 @@ async def miwifi_luci_get(path: str) -> str:
     # 库内部已有只读黑名单（reboot/set_/upgrade/bind 等），这里再加一层
     blocked = ("reboot", "reset", "shutdown", "upgrade", "delete", "remove")
     if any(b in path.lower() for b in blocked):
-        return "❌ 该路径不在只读白名单内（被安全策略拦截）：%s" % path
+        return f"❌ 该路径不在只读白名单内（被安全策略拦截）：{path}"
     c = get_client()
     r = await c.async_luci_request(path)
     return _summarize(r)
