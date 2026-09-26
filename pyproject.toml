@@ -8,14 +8,13 @@ version = "0.1.0"
 description = "小米 / 红米路由器 MCP Server —— 让 AI 助手直接管理路由器"
 readme = "README.md"
 license = { file = "LICENSE" }
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 keywords = ["mcp", "model-context-protocol", "xiaomi", "redmi", "router", "miwifi", "luci"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
@@ -24,7 +23,7 @@ classifiers = [
 ]
 dependencies = [
   "python-xiaomi-miwifi>=0.6.0",
-  "mcp>=1.0.0",
+  "mcp>=1.0.0,<2",   # mcp 2.x 把 FastMCP 改名为 MCPServer，API 有变
   "aiohttp>=3.9.0",
 ]
 
@@ -45,7 +44,7 @@ py-modules = []
 # ── Ruff（lint + format）────────────────────────────────────────────
 [tool.ruff]
 line-length = 110
-target-version = "py310"
+target-version = "py311"
 exclude = [".git", "__pycache__", "build", "dist", ".venv", "venv"]
 
 [tool.ruff.lint]

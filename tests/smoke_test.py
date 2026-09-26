@@ -2,6 +2,7 @@
 Smoke test：验证 server.py 能被导入、MCP 工具全部注册。
 
 不连接真实路由器 —— 只做静态检查，可在 CI 无网络环境下运行。
+需要 Python 3.11+（依赖 python-xiaomi-miwifi 的要求）。
 """
 
 import importlib.util

@@ -9,7 +9,7 @@
 **1. 确认基础信息**
 
 ```bash
-python --version                    # 需要 3.10+
+python --version                    # 需要 3.11+
 pip show python-xiaomi-miwifi       # 版本
 ```
 

@@ -1,3 +1,6 @@
+# MCP SDK —— 本项目的 server.py 基于 mcp 1.x 的 FastMCP API
+# ⚠️ mcp 2.x 把 FastMCP 改名为 MCPServer 且 API 有变，故 pin <2
+mcp>=1.0.0,<2
+
 python-xiaomi-miwifi>=0.6.0
-mcp>=1.0.0
 aiohttp>=3.9.0
