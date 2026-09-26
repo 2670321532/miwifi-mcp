@@ -56,7 +56,7 @@
 ## 📦 安装
 
 ```bash
-git clone https://github.com/<your-name>/miwifi-mcp.git
+git clone https://github.com/2670321532/miwifi-mcp.git
 cd miwifi-mcp
 pip install -r requirements.txt
 ```
