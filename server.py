@@ -24,6 +24,7 @@ from typing import Any
 import aiohttp
 from mcp.server.fastmcp import FastMCP
 from xiaomi_miwifi import ClientDevice, MiWiFiClient
+from xiaomi_miwifi.const import PATH_MAC_BIND
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("miwifi-mcp")
@@ -306,9 +307,27 @@ async def miwifi_delete_port_forward(sport: int) -> str:
 
 @mcp.tool()
 async def miwifi_add_dhcp_reservation(mac: str, ip: str, name: str) -> str:
-    """添加 DHCP 静态地址绑定（固定设备 IP）"""
+    """添加 DHCP 静态地址绑定（固定设备 IP）
+
+    ⚠️ 这里不用库的 async_add_dhcp_reservation：它内部用 json.dumps 的默认
+    ASCII 转义构造请求体，而该接口是「读全部 → 改一条 → 整体写回」的语义，
+    于是路由器上【已有条目的中文名】会被写成 u534eu4e3a 这类乱码
+    （丢失反斜杠的 \\uXXXX）。实测 41 条绑定里坏了 31 条。
+    改为 ensure_ascii=False 自行构造请求体，中文可正常保存。
+    """
     c = get_client()
-    ok = await c.async_add_dhcp_reservation(mac=mac, ip=ip, name=name)
+    current = await c.async_get_dhcp_reservations()
+    merged = [
+        r for r in current
+        if str(r.get("mac", "")).upper() != mac.upper()
+    ]
+    merged.append({"ip": ip, "mac": mac, "name": name})
+    payload = [
+        {"ip": r["ip"], "mac": r["mac"], "name": r.get("name", "")}
+        for r in merged
+    ]
+    body = {"data": json.dumps(payload, ensure_ascii=False)}
+    ok = c._ok(await c._post(PATH_MAC_BIND, body))
     return f"✅ 已绑定 {mac} → {ip} ({name})" if ok else "❌ 绑定失败"
 
 
